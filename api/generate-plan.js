@@ -80,7 +80,17 @@ type ist eines von: swim, bike, run, strength.`;
     }
 
     const planText = data.content[0].text;
-    const clean = planText.replace(/```json\n?|```\n?/g, '').trim();
+    // Extrahiere JSON aus der Antwort
+    let clean = planText;
+    const jsonMatch = planText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+    clean = jsonMatch[0];
+}
+
+let plan;
+try {
+  plan = JSON.parse(clean);
+} catch(parseErr) {
 
     let plan;
     try {
