@@ -924,7 +924,12 @@
           body: JSON.stringify({ answers: state.answers })
         });
         const data = await res.json();
-        const plan = data.plan;
+        const plan = data.plan || data;
+        if (!plan || !plan.weeks) {
+        alert('Plan konnte nicht geladen werden: ' + JSON.stringify(data).substring(0, 200));
+        setState({screen:'questionnaire'});
+  return;
+}
         plan.start_date = new Date().toISOString().split('T')[0];
         const profileData = { id: state.user.id };
         Object.entries(state.answers).forEach(([k, v]) => { profileData[k] = Array.isArray(v) ? v.join(',') : v; });
