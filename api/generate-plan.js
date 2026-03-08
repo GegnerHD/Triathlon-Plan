@@ -80,20 +80,11 @@ type ist eines von: swim, bike, run, strength.`;
     }
 
     const planText = data.content[0].text;
-    // Extrahiere JSON aus der Antwort
-    let clean = planText;
-    const jsonMatch = planText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-    clean = jsonMatch[0];
-}
-
-let plan;
-try {
-  plan = JSON.parse(clean);
-} catch(parseErr) {
 
     let plan;
     try {
+      const jsonMatch = planText.match(/\{[\s\S]*\}/);
+      const clean = jsonMatch ? jsonMatch[0] : planText.replace(/```json\n?|```\n?/g, '').trim();
       plan = JSON.parse(clean);
     } catch(parseErr) {
       console.error('JSON parse error:', parseErr, 'Raw text:', planText);
