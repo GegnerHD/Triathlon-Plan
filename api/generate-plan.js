@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     ? answers.training_days.join(', ')
     : answers.training_days;
 
-  const prompt = `Du bist ein professioneller Triathlon-Trainer. Erstelle einen detaillierten Trainingsplan für einen Athleten mit folgenden Daten:
+  const prompt = `Du bist ein professioneller Triathlon-Trainer. Erstelle einen Trainingsplan für einen Athleten:
 
 - Gewicht: ${answers.weight} kg
 - Fitnesslevel: ${answers.fitness_level}
@@ -18,38 +18,16 @@ export default async function handler(req, res) {
 - Trainingstage: ${trainingDays}
 - Kraftsport: ${answers.strength}
 
-Wichtige Hinweise:
-- Plane nur auf den angegebenen Trainingstagen
-- Krafttraining (falls gewünscht) sinnvoll in den Plan einordnen, 1-2x pro Woche, in der Taper-Phase reduzieren
-- Anzahl Wochen: 20
-- Ernährungsempfehlungen basierend auf dem Gewicht mitgeben
+Regeln:
+- Nur auf den genannten Trainingstagen planen
+- Krafttraining 1-2x/Woche sinnvoll einordnen, in Taper-Phase reduzieren
+- Genau 20 Wochen
+- day: 0=Mo, 1=Di, 2=Mi, 3=Do, 4=Fr, 5=Sa, 6=So
+- type: swim, bike, run oder strength
+- Halte detail-Texte kurz (max 100 Zeichen)
 
-Antworte NUR mit einem JSON-Objekt, kein Text davor oder danach, keine Markdown-Backticks. Format:
-{
-  "weeks": [
-    {
-      "week": 1,
-      "phase": "Grundlage",
-      "days": [
-        {
-          "day": 0,
-          "sessions": [
-            {"type": "swim", "title": "Schwimmen", "detail": "1200m locker"}
-          ]
-        }
-      ]
-    }
-  ],
-  "nutrition": {
-    "base_carbs": "300-350",
-    "base_protein": "120-130",
-    "intensive_carbs": "420-500",
-    "intensive_protein": "130-145"
-  }
-}
-
-day ist 0=Montag, 1=Dienstag, 2=Mittwoch, 3=Donnerstag, 4=Freitag, 5=Samstag, 6=Sonntag.
-type ist eines von: swim, bike, run, strength.`;
+Antworte AUSSCHLIESSLICH mit raw JSON, absolut kein Text oder Backticks davor oder danach:
+{"weeks":[{"week":1,"phase":"Grundlage","days":[{"day":0,"sessions":[{"type":"swim","title":"Schwimmen","detail":"1200m locker"}]}]}],"nutrition":{"base_carbs":"300-350","base_protein":"120-130","intensive_carbs":"420-500","intensive_protein":"130-145"}}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -61,40 +39,45 @@ type ist eines von: swim, bike, run, strength.`;
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5',
-        max_tokens: 8000,
+        max_tokens: 16000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Anthropic API error:', errText);
       return res.status(500).json({ error: 'Anthropic API Fehler: ' + errText });
     }
 
     const data = await response.json();
 
     if (!data.content || !data.content[0]) {
-      console.error('Unexpected response structure:', JSON.stringify(data));
       return res.status(500).json({ error: 'Unerwartete API-Antwort', details: JSON.stringify(data) });
     }
 
-    const planText = data.content[0].text;
+    let planText = data.content[0].text.trim();
+
+    // Entferne Backticks falls vorhanden
+    planText = planText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    // Extrahiere JSON-Block
+    const start = planText.indexOf('{');
+    const end = planText.lastIndexOf('}');
+    if (start === -1 || end === -1) {
+      return res.status(500).json({ error: 'Kein JSON gefunden', raw: planText.substring(0, 300) });
+    }
+    const jsonStr = planText.substring(start, end + 1);
 
     let plan;
     try {
-      const jsonMatch = planText.match(/\{[\s\S]*\}/);
-      const clean = jsonMatch ? jsonMatch[0] : planText.replace(/```json\n?|```\n?/g, '').trim();
-      plan = JSON.parse(clean);
+      plan = JSON.parse(jsonStr);
     } catch(parseErr) {
-      console.error('JSON parse error:', parseErr, 'Raw text:', planText);
-      return res.status(500).json({ error: 'JSON Parse Fehler', raw: planText.substring(0, 200) });
+      return res.status(500).json({ error: 'JSON Parse Fehler', raw: jsonStr.substring(0, 300) });
     }
 
     res.status(200).json({ plan });
 
   } catch (err) {
-    console.error('Handler error:', err);
     res.status(500).json({ error: err.message });
   }
 }
