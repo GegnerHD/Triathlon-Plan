@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Triathlon Training</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --card: #1a2235;
+      --accent: #00d4ff;
+      --accent2: #ff6b35;
+      --accent3: #7fff7f;
+      --text: #e8edf5;
+      --muted: #6b7a99;
+      --border: rgba(255, 255, 255, 0.07);
+      --swim: #00d4ff;
+      --bike: #ff6b35;
+      --run: #7fff7f;
+      --strength: #c084fc;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Auth */
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid var(--border);
+    }
+
+    .auth-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--accent), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    .auth-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .input-group {
+      margin-bottom: 14px;
+    }
+
+    .input-group label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 10px;
+    }
+
+    .error-msg {
+      background: rgba(255, 59, 91, 0.1);
+      border: 1px solid rgba(255, 59, 91, 0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #ff6b8a;
+      margin-bottom: 14px;
+    }
+
+    /* Questionnaire */
+    .quest-wrap {
+      min-height: 100vh;
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .quest-header {
+      padding: 20px 0 28px;
+    }
+
+    .quest-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+
+    .quest-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .question-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .question-label {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .option-btn {
+      padding: 12px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent);
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-back {
+      flex: 0 0 auto;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 15px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .q-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px;
+      color: #e8edf5;
+      font-size: 18px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+    }
+
+    /* Loading */
+    .loading-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .loading-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .loading-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .loading-sub {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.5;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 6px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    .ldot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+
+    .ldot:nth-child(2) {
+      animation-delay: 0.2s;
+      background: var(--accent2);
+    }
+
+    .ldot:nth-child(3) {
+      animation-delay: 0.4s;
+      background: var(--accent3);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.1)
+      }
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-8px)
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* App */
+    .header {
+      background: rgba(10, 14, 26, 0.95);
+      padding: 16px 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .app-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--accent), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-badge {
+      text-align: right;
+    }
+
+    .day-name {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+    }
+
+    .date-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      line-height: 1;
+      color: var(--accent);
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding-bottom: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .section {
+      padding: 14px 16px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease;
+    }
+
+    .card-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .day-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .week-info {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .session-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .session-item.done {
+      opacity: 0.4;
+    }
+
+    .session-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .session-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .session-title.done {
+      text-decoration: line-through;
+    }
+
+    .session-detail {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .check-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all 0.2s;
+    }
+
+    .check-btn.done {
+      background: var(--accent3);
+      border-color: var(--accent3);
+    }
+
+    .phase-bar {
+      margin: 0 16px 12px;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .phase-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .nut-card {
+      margin: 0 16px 16px;
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nut-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9500, #ff6b35);
+    }
+
+    .nut-name {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .nut-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .nut-unit {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .nut-type {
+      font-size: 10px;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+
+    .week-day {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 8px 2px;
+      text-align: center;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .week-day.today {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .week-day.selected {
+      border-color: var(--accent2);
+      background: rgba(255, 107, 53, 0.08);
+    }
+
+    .week-day-name {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .week-day-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .week-dots {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .wdot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .rest-box {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .bottom-safe {
+      height: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script>
+    // ─── CONFIG ──────────────────────────────────────────────────────────────────
+    const SUPABASE_URL = 'https://xepddfpiodwnmiajeotf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_irBMELEoc-q9rF-PG_x6_Q_hI0TdPPB';
+    const API_URL = 'https://triathlon-plan.vercel.app/api/generate-plan';
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const DAYS_FULL = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const DAYS_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+    const QUESTIONS = [
+      { id: 'weight', label: 'Wie viel wiegst du?', type: 'number', placeholder: 'z.B. 75', unit: 'kg' },
+      { id: 'fitness_level', label: 'Wie schätzt du dein aktuelles Fitnesslevel ein?', type: 'select', options: ['Einsteiger', 'Fortgeschrittener', 'Erfahren'] },
+      { id: 'swim_time', label: 'Wie schnell schwimmst du 1,9 km?', type: 'mixed', placeholder: 'z.B. 42:00', hint: 'Format: mm:ss oder hh:mm:ss', fallback_options: ['Einsteiger', 'Fortgeschritten', 'Erfahren'] },
+      { id: 'bike_time', label: 'Wie schnell fährst du 90 km Rad?', type: 'mixed', placeholder: 'z.B. 2:45:00', hint: 'Format: hh:mm:ss', fallback_options: ['Einsteiger', 'Fortgeschritten', 'Erfahren'] },
+      { id: 'run_time', label: 'Wie schnell läufst du einen Halbmarathon (21 km)?', type: 'mixed', placeholder: 'z.B. 1:55:00', hint: 'Format: hh:mm:ss', fallback_options: ['Einsteiger', 'Fortgeschritten', 'Erfahren'] },
+      { id: 'target_time', label: 'Was ist deine Zielzeit für den Wettkampf?', type: 'select', options: ['Unter 5 Stunden', '5:00–5:30 Stunden', '5:30–6:00 Stunden', '6:00–6:30 Stunden', 'Finishen ist das Ziel'] },
+      { id: 'training_days', label: 'An welchen Tagen willst du trainieren?', hint: 'Empfehlung: 5–6 Einheiten/Woche für einen Athleten mit 6 Monaten Vorbereitung', type: 'multiselect', options: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] },
+      { id: 'strength', label: 'Möchtest du parallel Kraftsport machen?', hint: 'Empfehlung: 1–2x/Woche – wird sinnvoll in den Wochenplan eingeordnet', type: 'select', options: ['Ja – ganzer Körper', 'Ja – nur Oberkörper', 'Nein'] },
+    ];
+
+    let state = { screen: 'loading', user: null, plan: null, answers: {}, questionIdx: 0, done: {}, tab: 'today', selWeekDay: null, authMode: 'login', authError: null };
+    function setState(patch) { Object.assign(state, patch); render(); }
+
+    function si(type) {
+      if (type === 'swim') return { icon: '🏊', color: '#00d4ff', bg: 'rgba(0,212,255,0.12)' };
+      if (type === 'bike') return { icon: '🚴', color: '#ff6b35', bg: 'rgba(255,107,53,0.12)' };
+      if (type === 'run') return { icon: '🏃', color: '#7fff7f', bg: 'rgba(127,255,127,0.12)' };
+      if (type === 'strength') return { icon: '💪', color: '#c084fc', bg: 'rgba(192,132,252,0.12)' };
+      return { icon: '⚡', color: '#00d4ff', bg: 'rgba(0,212,255,0.1)' };
+    }
+
+    function getPhase(week) {
+      if (week <= 4) return { name: 'Phase 1 – Grundlage', sub: 'Technik & Basis', color: '#00d4ff' };
+      if (week <= 8) return { name: 'Phase 2 – Aufbau', sub: 'Radleistung & Koppelläufe', color: '#7fff7f' };
+      if (week <= 14) return { name: 'Phase 3 – Spezifisch', sub: 'Lange Belastungen', color: '#ff6b35' };
+      if (week <= 18) return { name: 'Phase 4 – Peak', sub: 'Wettkampftempo', color: '#ff3b6b' };
+      if (week === 19) return { name: 'Phase 5 – Taper', sub: 'Volumen reduzieren', color: '#00d4ff' };
+      return { name: 'Race Week 🏁', sub: 'Letzte Vorbereitungen', color: '#ffd700' };
+    }
+
+    function getNut(sessions) {
+      const intensive = (sessions || []).some(s => s.type === 'bike' || s.type === 'run' || String(s.detail || '').includes('Tempo') || String(s.detail || '').includes('Intervall'));
+      return intensive
+        ? { carbs: '420–500', protein: '130–145', type: 'Intensivtag', color: '#ff6b35' }
+        : { carbs: '300–350', protein: '120–130', type: 'Grundlagentag', color: '#00d4ff' };
+    }
+
+    function getPlanDay(date, plan) {
+      if (!plan?.weeks) return null;
+      const start = new Date(plan.start_date || new Date()); start.setHours(0, 0, 0, 0);
+      const d = new Date(date); d.setHours(0, 0, 0, 0);
+      const diff = Math.floor((d - start) / 86400000);
+      if (diff < 0) return null;
+      const weekNum = Math.floor(diff / 7) + 1;
+      const dayIdx = diff % 7;
+      const week = plan.weeks.find(w => w.week === weekNum);
+      if (!week) return null;
+      return { weekNum, dayData: (week.days || []).find(d => d.day === dayIdx) || { sessions: [] } };
+    }
+
+    function getWeekDays(date, plan) {
+      const start = new Date(plan?.start_date || new Date()); start.setHours(0, 0, 0, 0);
+      const d = new Date(date); d.setHours(0, 0, 0, 0);
+      const diff = Math.floor((d - start) / 86400000);
+      const weekStart = diff - (diff % 7);
+      return Array.from({ length: 7 }, (_, i) => {
+        const dd = new Date(start.getTime() + (weekStart + i) * 86400000);
+        const wn = Math.floor(weekStart / 7) + 1;
+        const week = plan?.weeks?.find(w => w.week === wn);
+        return { date: dd, weekNum: wn, dayData: (week?.days || []).find(d => d.day === i) || { sessions: [] } };
+      });
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      if (state.screen === 'loading') { app.innerHTML = renderLoading('Laden…', ''); return; }
+      if (state.screen === 'auth') { app.innerHTML = renderAuth(); bindAuth(); return; }
+      if (state.screen === 'questionnaire') { app.innerHTML = renderQuestionnaire(); bindQuest(); return; }
+      if (state.screen === 'generating') { app.innerHTML = renderLoading('Plan wird generiert…', 'Claude analysiert deine Daten und erstellt deinen persönlichen Trainingsplan'); return; }
+      if (state.screen === 'app') { app.innerHTML = renderApp(); return; }
+    }
+
+    function renderLoading(title, sub) {
+      return `<div class="loading-wrap">
+    <div class="loading-icon">🏊</div>
+    <div class="loading-title">${title}</div>
+    <div class="loading-sub">${sub}</div>
+    <div class="loading-dots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+  </div>`;
+    }
+
+    function renderAuth() {
+      return `<div class="auth-wrap"><div class="auth-card">
+    <div class="auth-title">TRIATHLON</div>
+    <div class="auth-sub">Dein persönlicher KI-Trainingsplan</div>
+    ${state.authError ? `<div class="error-msg">${state.authError}</div>` : ''}
+    <div id="auth-login" style="${state.authMode === 'register' ? 'display:none' : ''}">
+      <div class="input-group"><label>E-Mail</label><input id="login-email" type="email" placeholder="deine@email.de"></div>
+      <div class="input-group"><label>Passwort</label><input id="login-pw" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" id="btn-login">Einloggen</button>
+      <button class="btn btn-ghost" id="btn-to-register">Noch kein Konto? Registrieren</button>
+    </div>
+    <div id="auth-register" style="${state.authMode === 'register' ? '' : 'display:none'}">
+      <div class="input-group"><label>E-Mail</label><input id="reg-email" type="email" placeholder="deine@email.de"></div>
+      <div class="input-group"><label>Passwort</label><input id="reg-pw" type="password" placeholder="min. 6 Zeichen"></div>
+      <button class="btn btn-primary" id="btn-register">Registrieren</button>
+      <button class="btn btn-ghost" id="btn-to-login">Bereits registriert? Einloggen</button>
+    </div>
+  </div></div>`;
+    }
+
+    function bindAuth() {
+      document.getElementById('btn-to-register')?.addEventListener('click', () => setState({ authMode: 'register', authError: null }));
+      document.getElementById('btn-to-login')?.addEventListener('click', () => setState({ authMode: 'login', authError: null }));
+      document.getElementById('btn-login')?.addEventListener('click', async () => {
+        const email = document.getElementById('login-email').value;
+        const pw = document.getElementById('login-pw').value;
+        const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+        if (error) setState({ authError: error.message });
+      });
+      document.getElementById('btn-register')?.addEventListener('click', async () => {
+        const email = document.getElementById('reg-email').value;
+        const pw = document.getElementById('reg-pw').value;
+        const { error } = await sb.auth.signUp({ email, password: pw });
+        if (error) setState({ authError: error.message });
+        else setState({ authError: null, authMode: 'login' });
+      });
+    }
+
+    function renderQuestionnaire() {
+      const q = QUESTIONS[state.questionIdx];
+      const progress = (state.questionIdx / QUESTIONS.length) * 100;
+      const val = state.answers[q.id] || '';
+      let input = '';
+
+      if (q.type === 'number') {
+        input = `<input class="q-input" id="q-input" type="number" placeholder="${q.placeholder}" value="${val}">`;
+      } else if (q.type === 'select') {
+        const cols = q.options.length > 4 ? '1fr' : '1fr 1fr';
+        input = `<div class="options-grid" style="grid-template-columns:${cols}">${q.options.map(o => `<button class="option-btn${val === o ? ' selected' : ''}" onclick="selectOption('${o.replace(/'/g, "\\'")}')">${o}</button>`).join('')}</div>`;
+      } else if (q.type === 'multiselect') {
+        const selected = Array.isArray(val) ? val : [];
+        input = `
+      ${q.hint ? `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">💡 ${q.hint}</div>` : ''}
+      <div class="options-grid" style="grid-template-columns:1fr 1fr">${q.options.map(o => `<button class="option-btn${selected.includes(o) ? ' selected' : ''}" onclick="toggleMulti('${o}')">${o}</button>`).join('')}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center">${selected.length} Tag${selected.length !== 1 ? 'e' : ''} ausgewählt</div>`;
+      } else if (q.type === 'mixed') {
+        const isFallback = q.fallback_options.includes(val);
+        input = `
+      ${q.hint ? `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">💡 ${q.hint}</div>` : ''}
+      <input class="q-input" id="q-input" type="text" placeholder="${q.placeholder}" value="${isFallback ? '' : val}" style="margin-bottom:14px">
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">– oder Erfahrungslevel wählen –</div>
+      <div class="options-grid">${q.fallback_options.map(o => `<button class="option-btn${val === o ? ' selected' : ''}" onclick="selectMixedFallback('${o}')">${o}</button>`).join('')}</div>`;
+      }
+
+      return `<div class="quest-wrap">
+    <div class="quest-header">
+      <div class="quest-title">DEIN PLAN</div>
+      <div class="quest-sub">Frage ${state.questionIdx + 1} von ${QUESTIONS.length}</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+    <div class="question-card">
+      <div class="question-label">${q.label}</div>
+      ${q.type === 'select' && q.hint ? `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">💡 ${q.hint}</div>` : ''}
+      ${input}
+    </div>
+    <div class="nav-btns">
+      ${state.questionIdx > 0 ? `<button class="btn-back" onclick="questBack()">←</button>` : ''}
+      <button class="btn btn-primary" id="btn-next" style="flex:1">${state.questionIdx === QUESTIONS.length - 1 ? 'Plan generieren 🚀' : 'Weiter'}</button>
+    </div>
+  </div>`;
+    }
+
+    function bindQuest() {
+      document.getElementById('btn-next')?.addEventListener('click', questNext);
+    }
+
+    window.selectOption = function (val) {
+      const q = QUESTIONS[state.questionIdx];
+      state.answers[q.id] = val;
+      render();
+    };
+    window.toggleMulti = function (val) {
+      const q = QUESTIONS[state.questionIdx];
+      let arr = Array.isArray(state.answers[q.id]) ? [...state.answers[q.id]] : [];
+      if (arr.includes(val)) arr = arr.filter(v => v !== val);
+      else arr.push(val);
+      state.answers[q.id] = arr;
+      render();
+    };
+    window.selectMixedFallback = function (val) {
+      const q = QUESTIONS[state.questionIdx];
+      state.answers[q.id] = val;
+      render();
+    };
+    window.questBack = function () { setState({ questionIdx: state.questionIdx - 1 }); };
+
+    async function questNext() {
+      const q = QUESTIONS[state.questionIdx];
+      let val = state.answers[q.id];
+
+      if (q.type === 'number') {
+        val = document.getElementById('q-input')?.value;
+        state.answers[q.id] = val;
+      } else if (q.type === 'mixed') {
+        const inputVal = document.getElementById('q-input')?.value?.trim();
+        if (inputVal) { val = inputVal; state.answers[q.id] = val; }
+        // else keep fallback selection
+      } else if (q.type === 'multiselect') {
+        // val is already array in state
+      }
+
+      const isEmpty = !val || (Array.isArray(val) && val.length === 0);
+      if (isEmpty) { alert('Bitte beantworte die Frage'); return; }
+      if (state.questionIdx < QUESTIONS.length - 1) { setState({ questionIdx: state.questionIdx + 1 }); return; }
+      await generatePlan();
+    }
+
+    async function generatePlan() {
+      setState({ screen: 'generating' });
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: state.answers })
+        });
+        const data = await res.json();
+        const plan = data.plan;
+        plan.start_date = new Date().toISOString().split('T')[0];
+        const profileData = { id: state.user.id };
+        Object.entries(state.answers).forEach(([k, v]) => { profileData[k] = Array.isArray(v) ? v.join(',') : v; });
+        await sb.from('profiles').upsert(profileData);
+        await sb.from('training_plans').upsert({ user_id: state.user.id, plan_data: plan });
+        setState({ screen: 'app', plan });
+      } catch (e) {
+        alert('Fehler: ' + e.message);
+        setState({ screen: 'questionnaire' });
+      }
+    }
+
+    function renderApp() {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const pd = getPlanDay(today, state.plan);
+      const sessions = pd?.dayData?.sessions || [];
+      const weekNum = pd?.weekNum;
+      const phase = weekNum ? getPhase(weekNum) : null;
+      const nut = getNut(sessions);
+      const dateKey = today.toISOString().split('T')[0];
+      let content = '';
+      if (state.tab === 'today') content = renderToday(today, sessions, weekNum, phase, nut, dateKey);
+      else if (state.tab === 'week') content = renderWeek(today);
+      else content = renderAll(today);
+      return `<div>
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="app-title">TRIATHLON</div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px">Training Plan</div>
+        </div>
+        <div class="header-right">
+          <div class="date-badge">
+            <div class="day-name">${DAYS_FULL[today.getDay()]}</div>
+            <div class="date-num">${today.getDate()} ${MONTHS[today.getMonth()]}</div>
+          </div>
+          <button class="logout-btn" onclick="doLogout()">Logout</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab${state.tab === 'today' ? ' active' : ''}" onclick="setTab('today')">Heute</button>
+        <button class="tab${state.tab === 'week' ? ' active' : ''}" onclick="setTab('week')">Diese Woche</button>
+        <button class="tab${state.tab === 'all' ? ' active' : ''}" onclick="setTab('all')">Alle Wochen</button>
+      </div>
+    </div>
+    ${content}
+    <div class="bottom-safe"></div>
+  </div>`;
+    }
+
+    function renderToday(today, sessions, weekNum, phase, nut, dateKey) {
+      return `
+  ${phase ? `<div class="phase-bar">
+    <div class="phase-dot" style="background:${phase.color};box-shadow:0 0 8px ${phase.color}"></div>
+    <div style="flex:1"><div style="font-weight:600;font-size:13px">${phase.name}</div><div style="font-size:11px;color:var(--muted)">${phase.sub}</div></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${phase.color}">W${weekNum}</div>
+  </div>`: ''}
+  <div class="section">
+    <div class="section-label">Heute</div>
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="day-title">${DAYS_FULL[today.getDay()].toUpperCase()}</div>
+      <div class="week-info">${weekNum ? `Woche ${weekNum} von ${state.plan?.weeks?.length || 20}` : 'Außerhalb des Plans'}</div>
+      ${renderSessions(sessions, dateKey)}
+    </div>
+  </div>
+  <div style="padding:0 0 4px">
+    <div class="section-label" style="padding:0 16px">Ernährungsziele</div>
+    <div class="nut-card">
+      <div class="nut-accent"></div>
+      <div><div class="nut-name">Kohlenhydrate</div><div class="nut-value" style="color:#ff9500">${nut.carbs}<span class="nut-unit"> g</span></div><div class="nut-type" style="background:${nut.color}20;color:${nut.color}">${nut.type}</div></div>
+      <div><div class="nut-name">Protein</div><div class="nut-value" style="color:#00d4ff">${nut.protein}<span class="nut-unit"> g</span></div></div>
+    </div>
+  </div>`;
+    }
+
+    function renderWeek(today) {
+      const weekDays = getWeekDays(today, state.plan);
+      const sel = state.selWeekDay !== null ? weekDays[state.selWeekDay] : null;
+      return `<div class="section">
+    <div class="section-label">Diese Woche</div>
+    <div class="week-grid">
+      ${weekDays.map((wd, i) => {
+        const isToday = wd.date.toDateString() === today.toDateString();
+        const isSel = state.selWeekDay === i;
+        const s = wd.dayData?.sessions || [];
+        return `<div class="week-day${isToday ? ' today' : ''}${isSel ? ' selected' : ''}" onclick="selDay(${i})">
+          <div class="week-day-name">${DAYS_SHORT[wd.date.getDay()]}</div>
+          <div class="week-day-num" style="color:${isToday ? '#00d4ff' : '#e8edf5'}">${wd.date.getDate()}</div>
+          <div class="week-dots">${s.map(ss => `<div class="wdot" style="background:${si(ss.type).color}"></div>`).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${sel ? `
+    <div style="color:#ff6b35;font-size:10px;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px">${DAYS_FULL[sel.date.getDay()]}, ${sel.date.getDate()}. ${MONTHS[sel.date.getMonth()]}</div>
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="day-title">${DAYS_FULL[sel.date.getDay()].toUpperCase()}</div>
+      <div style="height:10px"></div>
+      ${renderSessions(sel.dayData?.sessions || [], sel.date.toISOString().split('T')[0])}
+    </div>
+    <div style="margin-top:12px">
+      <div class="section-label" style="margin-bottom:8px">Ernährungsziele</div>
+      <div class="nut-card">
+        <div class="nut-accent"></div>
+        ${(() => { const n = getNut(sel.dayData?.sessions || []); return `<div><div class="nut-name">Kohlenhydrate</div><div class="nut-value" style="color:#ff9500">${n.carbs}<span class="nut-unit"> g</span></div><div class="nut-type" style="background:${n.color}20;color:${n.color}">${n.type}</div></div><div><div class="nut-name">Protein</div><div class="nut-value" style="color:#00d4ff">${n.protein}<span class="nut-unit"> g</span></div></div>`; })()}
+      </div>
+    </div>`: ''}
+  </div>`;
+    }
+
+    function renderAll(today) {
+      if (!state.plan?.weeks) return '<div class="section"><div style="color:var(--muted)">Kein Plan vorhanden</div></div>';
+      const pd = getPlanDay(today, state.plan);
+      const currentWeek = pd?.weekNum;
+      const grouped = {};
+      state.plan.weeks.forEach(w => {
+        const p = getPhase(w.week);
+        if (!grouped[p.name]) grouped[p.name] = { color: p.color, weeks: [] };
+        grouped[p.name].weeks.push(w);
+      });
+      return `<div class="section">
+    ${Object.entries(grouped).map(([name, ph]) => `
+    <div style="margin-bottom:20px">
+      <div class="section-label">${name}</div>
+      ${ph.weeks.map(w => {
+        const allS = (w.days || []).flatMap(d => d.sessions || []);
+        const types = [...new Set(allS.map(s => s.type))];
+        const isCurrent = w.week === currentWeek;
+        return `<div style="background:var(--card);border:1px solid ${isCurrent ? '#00d4ff' : 'rgba(255,255,255,0.07)'};border-radius:14px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);width:36px;flex-shrink:0">W${w.week}</div>
+          <div style="flex:1"><div>${types.map(t => `<span style="font-size:16px;margin-right:4px">${si(t).icon}</span>`).join('')}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${allS.length} Einheiten</div></div>
+          ${isCurrent ? `<div style="font-size:10px;color:#00d4ff;font-weight:600">← jetzt</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`).join('')}
+  </div>`;
+    }
+
+    function renderSessions(sessions, dateKey) {
+      if (!sessions?.length) return `<div class="rest-box"><div style="font-size:42px">😴</div><div style="color:var(--muted);font-size:13px;margin-top:8px">Ruhetag – Erhol dich gut!</div></div>`;
+      return sessions.map((s, i) => {
+        const key = `${dateKey}-${i}`;
+        const done = !!state.done[key];
+        const info = si(s.type);
+        return `<div class="session-item${done ? ' done' : ''}" onclick="toggleDone('${key}')">
+      <div class="session-icon" style="background:${info.bg}">${info.icon}</div>
+      <div class="session-content">
+        <div class="session-title${done ? ' done' : ''}" style="color:${info.color}">${s.title}</div>
+        <div class="session-detail">${String(s.detail || '').replace(/\n/g, '<br>')}</div>
+      </div>
+      <div class="check-btn${done ? ' done' : ''}">${done ? '<span style="font-size:12px;color:#000">✓</span>' : ''}</div>
+    </div>`;
+      }).join('');
+    }
+
+    window.toggleDone = k => { state.done[k] = !state.done[k]; render(); };
+    window.setTab = t => setState({ tab: t, selWeekDay: null });
+    window.selDay = i => setState({ selWeekDay: state.selWeekDay === i ? null : i });
+    window.doLogout = async () => { await sb.auth.signOut(); setState({ screen: 'auth', user: null, plan: null, authMode: 'login' }); };
+
+    async function init() {
+      render();
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) await loadUser(session.user);
+      else setState({ screen: 'auth' });
+      sb.auth.onAuthStateChange(async (_, session) => {
+        if (session) await loadUser(session.user);
+        else setState({ screen: 'auth', user: null, plan: null, authMode: 'login' });
+      });
+    }
+
+    async function loadUser(user) {
+      setState({ user });
+      const { data } = await sb.from('training_plans').select('plan_data').eq('user_id', user.id).single();
+      if (data?.plan_data) setState({ screen: 'app', plan: data.plan_data });
+      else setState({ screen: 'questionnaire', questionIdx: 0, answers: {} });
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
